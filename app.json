@@ -1,22 +1,22 @@
 {
   "expo": {
-    "name": "@privy-io/expo-starter",
-    "slug": "expo-starter",
+    "name": "@privy-io/expo-solana-starter",
+    "slug": "expo-solana-starter", 
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "solanaapp",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
+      "resizeMode": "contain", 
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "usesAppleSignIn": true,
       "supportsTablet": true,
-      "bundleIdentifier": "dev.privy.example",
-      "associatedDomains": ["webcredentials:<your-associated-domain>"],
+      "bundleIdentifier": "com.test.solanaapp",
+      "associatedDomains": [],
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
@@ -28,16 +28,16 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "dev.privy.example"
+      "package": "com.test.solanaapp"
     },
     "extra": {
-      "privyAppId": "<your-privy-app-id>",
-      "privyClientId": "<your-privy-app-client-id>",
-      "passkeyAssociatedDomain": "https://<your-associated-domain>"
+      "privyAppId": "cmdbsqd2b00z9le0mwx5usq52",
+      "privyClientId": "client-WY6Nut73J38JvZmtqsWbNPhhCZ59UCKFQ6iawcq7Qp77s",
+      "passkeyAssociatedDomain": ""
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
+      "expo-secure-store", 
       "expo-apple-authentication",
       [
         "expo-build-properties",

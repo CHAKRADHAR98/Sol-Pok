@@ -2,10 +2,12 @@ import { SafeAreaView, Text, View } from "react-native";
 import Constants from "expo-constants";
 import LoginScreen from "@/components/LoginScreen";
 import { usePrivy } from "@privy-io/expo";
-import { UserScreen } from "@/components/UserScreen";
+import { SolanaUserScreen } from "@/components/SolanaUserScreen";
 
 export default function Index() {
   const { user } = usePrivy();
+  
+  // Validate Privy App ID
   if ((Constants.expoConfig?.extra?.privyAppId as string).length !== 25) {
     return (
       <SafeAreaView>
@@ -21,6 +23,8 @@ export default function Index() {
       </SafeAreaView>
     );
   }
+  
+  // Validate Privy Client ID
   if (
     !(Constants.expoConfig?.extra?.privyClientId as string).startsWith(
       "client-"
@@ -40,5 +44,7 @@ export default function Index() {
       </SafeAreaView>
     );
   }
-  return !user ? <LoginScreen /> : <UserScreen />;
+  
+  // Route to LoginScreen or SolanaUserScreen based on authentication
+  return !user ? <LoginScreen /> : <SolanaUserScreen />;
 }
