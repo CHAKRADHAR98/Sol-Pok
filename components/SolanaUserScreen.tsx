@@ -18,6 +18,15 @@ import {
 import Constants from "expo-constants";
 import { PrivyUser } from "@privy-io/public-api";
 
+// Import poker components - with fallback handling
+let SimplePokerGame: React.ComponentType<any> | null = null;
+try {
+  const pokerModule = require("./poker/SimplePokerGame");
+  SimplePokerGame = pokerModule.SimplePokerGame;
+} catch (error) {
+  console.log("Poker game not available yet:", error);
+}
+
 // Helper function to get main identifier from linked accounts
 const toMainIdentifier = (x: PrivyUser["linked_accounts"][number]) => {
   if (x.type === "phone") {
@@ -42,8 +51,14 @@ const SOLANA_NETWORKS = {
   testnet: "https://api.testnet.solana.com",
 };
 
+// Navigation types
+type ScreenType = 'wallet' | 'poker_lobby' | 'poker_game';
+
 export const SolanaUserScreen = () => {
-  // State for managing network, transactions, and UI
+  // Navigation state
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>('wallet');
+  
+  // Existing wallet state
   const [currentNetwork, setCurrentNetwork] = useState<keyof typeof SOLANA_NETWORKS>("devnet");
   const [signedMessages, setSignedMessages] = useState<string[]>([]);
   const [transactionHistory, setTransactionHistory] = useState<string[]>([]);
@@ -278,150 +293,311 @@ export const SolanaUserScreen = () => {
     }
   }, [account?.address, currentNetwork, getBalance]);
 
+  // Navigation functions
+  const navigateToPokerLobby = () => {
+    if (!account?.address) {
+      Alert.alert("❌ Error", "Please create a wallet first to play poker");
+      return;
+    }
+    setCurrentScreen('poker_lobby');
+  };
+
+  const navigateToWallet = () => {
+    setCurrentScreen('wallet');
+  };
+
+  const navigateToPokerGame = () => {
+    setCurrentScreen('poker_game');
+  };
+
   if (!user) {
     return null;
   }
+
+  // Render different screens based on currentScreen
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 'poker_lobby':
+        return renderPokerLobby();
+      case 'poker_game':
+        return renderPokerGame();
+      default:
+        return renderWalletScreen();
+    }
+  };
+
+  // Poker Lobby Screen
+  const renderPokerLobby = () => (
+    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>🎰 Poker Lobby</Text>
+        <Text style={styles.subtitle}>Choose your game mode</Text>
+        
+        <TouchableOpacity 
+          style={styles.primaryButton} 
+          onPress={navigateToPokerGame}
+        >
+          <Text style={styles.primaryButtonText}>🤖 Play vs Bots</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.secondaryButton, { backgroundColor: '#a0aec0' }]} 
+          disabled={true}
+        >
+          <Text style={styles.secondaryButtonText}>👥 Multiplayer (Coming Soon)</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={navigateToWallet}
+        >
+          <Text style={styles.backButtonText}>⬅️ Back to Wallet</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+
+  // Poker Game Screen
+  const renderPokerGame = () => {
+    // If SimplePokerGame is available, use it
+    if (SimplePokerGame) {
+      return (
+        <SimplePokerGame 
+          playerId={user?.id || 'user1'} 
+          onBackToLobby={() => setCurrentScreen('poker_lobby')}
+        />
+      );
+    }
+    
+    // Fallback: Show setup instructions
+    return (
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>🔧 Poker Setup Required</Text>
+          <Text style={styles.subtitle}>Please complete the setup steps:</Text>
+          
+          <View style={styles.setupCard}>
+            <Text style={styles.setupTitle}>📋 Required Steps:</Text>
+            
+            <View style={styles.stepItem}>
+              <Text style={styles.stepNumber}>1.</Text>
+              <Text style={styles.stepText}>Install dependencies:</Text>
+            </View>
+            <View style={styles.codeBlock}>
+              <Text style={styles.codeText}>npm install @creativenull/deckjs lodash</Text>
+            </View>
+            
+            <View style={styles.stepItem}>
+              <Text style={styles.stepNumber}>2.</Text>
+              <Text style={styles.stepText}>Create these files:</Text>
+            </View>
+            <View style={styles.fileList}>
+              <Text style={styles.fileText}>• lib/poker/Poker.ts</Text>
+              <Text style={styles.fileText}>• lib/poker/TexasHoldem.ts</Text>
+              <Text style={styles.fileText}>• lib/poker/GameManager.ts</Text>
+              <Text style={styles.fileText}>• components/shared/Card.tsx</Text>
+              <Text style={styles.fileText}>• components/poker/SimplePokerGame.tsx</Text>
+            </View>
+            
+            <View style={styles.stepItem}>
+              <Text style={styles.stepNumber}>3.</Text>
+              <Text style={styles.stepText}>Restart Expo server:</Text>
+            </View>
+            <View style={styles.codeBlock}>
+              <Text style={styles.codeText}>npm start</Text>
+            </View>
+          </View>
+          
+          <View style={styles.statusCard}>
+            <Text style={styles.statusTitle}>📊 Current Status:</Text>
+            <Text style={styles.statusText}>
+              ❌ Poker game files not found
+            </Text>
+            <Text style={styles.statusText}>
+              ℹ️ User ID: {user?.id}
+            </Text>
+            <Text style={styles.statusText}>
+              ℹ️ Network: {currentNetwork.toUpperCase()}
+            </Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setCurrentScreen('poker_lobby')}
+          >
+            <Text style={styles.backButtonText}>⬅️ Back to Lobby</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  };
+
+  // Original Wallet Screen
+  const renderWalletScreen = () => (
+    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      {/* Balance Card */}
+      <View style={styles.balanceCard}>
+        <Text style={styles.balanceLabel}>Your Balance</Text>
+        <Text style={styles.balanceAmount}>
+          {walletBalance !== null ? `${walletBalance.toFixed(4)} SOL` : "Loading..."}
+        </Text>
+        {account?.address && (
+          <TouchableOpacity style={styles.refreshButton} onPress={getBalance}>
+            <Text style={styles.refreshButtonText}>🔄 Refresh</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Quick Actions Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>⚡ Quick Actions</Text>
+        
+        <TouchableOpacity 
+          style={[styles.pokerButton, !account?.address && styles.disabledButton]} 
+          onPress={navigateToPokerLobby}
+          disabled={!account?.address}
+        >
+          <Text style={styles.pokerButtonText}>🎰 Play Poker</Text>
+        </TouchableOpacity>
+        
+        {!account?.address && (
+          <Text style={styles.helperText}>Create a wallet to start playing poker!</Text>
+        )}
+      </View>
+
+      {/* Wallet Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>🔐 Wallet Management</Text>
+        {account?.address ? (
+          <View>
+            <View style={styles.addressContainer}>
+              <Text style={styles.addressText} numberOfLines={2}>
+                {account.address}
+              </Text>
+            </View>
+            
+            <TouchableOpacity style={styles.primaryButton} onPress={copyWalletAddress}>
+              <Text style={styles.primaryButtonText}>📋 Copy Address</Text>
+            </TouchableOpacity>
+
+            {currentNetwork !== "mainnet" && (
+              <TouchableOpacity 
+                style={[styles.secondaryButton, loading && styles.disabledButton]} 
+                onPress={requestAirdrop}
+                disabled={loading}
+              >
+                <Text style={styles.secondaryButtonText}>
+                  {loading ? "🕒 Getting SOL..." : "🪂 Get Test SOL"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.primaryButton, loading && styles.disabledButton]}
+            onPress={createWallet}
+            disabled={loading}
+          >
+            <Text style={styles.primaryButtonText}>
+              {loading ? "🕒 Creating..." : "✨ Create Wallet"}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Network Selection */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>🌐 Network Selection</Text>
+        <View style={styles.networkButtons}>
+          {Object.keys(SOLANA_NETWORKS).map((network) => (
+            <TouchableOpacity
+              key={network}
+              style={[
+                styles.networkButton,
+                currentNetwork === network && styles.activeNetworkButton
+              ]}
+              onPress={() => switchNetwork(network as keyof typeof SOLANA_NETWORKS)}
+              disabled={currentNetwork === network}
+            >
+              <Text style={[
+                styles.networkButtonText,
+                currentNetwork === network && styles.activeNetworkButtonText
+              ]}>
+                {network} {currentNetwork === network ? "✓" : ""}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Send SOL Card */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>💸 Send SOL</Text>
+        <TextInput
+          value={recipientAddress}
+          onChangeText={setRecipientAddress}
+          placeholder="Recipient address (e.g., 9WzDXw...)"
+          style={styles.textInput}
+          placeholderTextColor="#999"
+        />
+        <TextInput
+          value={solAmount}
+          onChangeText={setSolAmount}
+          placeholder="Amount in SOL"
+          keyboardType="numeric"
+          style={styles.textInput}
+          placeholderTextColor="#999"
+        />
+        <TouchableOpacity 
+          style={[
+            styles.sendButton,
+            (!recipientAddress || !account?.address || loading) && styles.disabledButton
+          ]}
+          onPress={sendSolTransaction}
+          disabled={!recipientAddress || !account?.address || loading}
+        >
+          <Text style={styles.sendButtonText}>
+            {loading ? "🕒 Sending..." : "🚀 Send SOL"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Transaction History */}
+      {transactionHistory.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>📜 Recent Transactions</Text>
+          {transactionHistory.slice(0, 5).map((tx, index) => (
+            <View key={index} style={styles.transactionItem}>
+              <Text style={styles.transactionText} numberOfLines={2}>
+                {tx}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Logout */}
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <Text style={styles.logoutButtonText}>🚪 Logout</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
 
   return (
     <View style={styles.container}>
       {/* Header with gradient background */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>💰 Solana Wallet</Text>
+        <Text style={styles.headerTitle}>
+          {currentScreen === 'wallet' ? '💰 Solana Wallet' : 
+           currentScreen === 'poker_lobby' ? '🎰 Poker Lobby' : 
+           '🃏 Poker Game'}
+        </Text>
         <View style={styles.networkBadge}>
           <Text style={styles.networkText}>🌐 {currentNetwork.toUpperCase()}</Text>
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Balance Card */}
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Your Balance</Text>
-          <Text style={styles.balanceAmount}>
-            {walletBalance !== null ? `${walletBalance.toFixed(4)} SOL` : "Loading..."}
-          </Text>
-          {account?.address && (
-            <TouchableOpacity style={styles.refreshButton} onPress={getBalance}>
-              <Text style={styles.refreshButtonText}>🔄 Refresh</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Wallet Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🔐 Wallet Management</Text>
-          {account?.address ? (
-            <View>
-              <View style={styles.addressContainer}>
-                <Text style={styles.addressText} numberOfLines={2}>
-                  {account.address}
-                </Text>
-              </View>
-              
-              <TouchableOpacity style={styles.primaryButton} onPress={copyWalletAddress}>
-                <Text style={styles.primaryButtonText}>📋 Copy Address</Text>
-              </TouchableOpacity>
-
-              {currentNetwork !== "mainnet" && (
-                <TouchableOpacity 
-                  style={[styles.secondaryButton, loading && styles.disabledButton]} 
-                  onPress={requestAirdrop}
-                  disabled={loading}
-                >
-                  <Text style={styles.secondaryButtonText}>
-                    {loading ? "🕒 Getting SOL..." : "🪂 Get Test SOL"}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : (
-            <TouchableOpacity 
-              style={[styles.primaryButton, loading && styles.disabledButton]}
-              onPress={createWallet}
-              disabled={loading}
-            >
-              <Text style={styles.primaryButtonText}>
-                {loading ? "🕒 Creating..." : "✨ Create Wallet"}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Network Selection */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🌐 Network Selection</Text>
-          <View style={styles.networkButtons}>
-            {Object.keys(SOLANA_NETWORKS).map((network) => (
-              <TouchableOpacity
-                key={network}
-                style={[
-                  styles.networkButton,
-                  currentNetwork === network && styles.activeNetworkButton
-                ]}
-                onPress={() => switchNetwork(network as keyof typeof SOLANA_NETWORKS)}
-                disabled={currentNetwork === network}
-              >
-                <Text style={[
-                  styles.networkButtonText,
-                  currentNetwork === network && styles.activeNetworkButtonText
-                ]}>
-                  {network} {currentNetwork === network ? "✓" : ""}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Send SOL Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>💸 Send SOL</Text>
-          <TextInput
-            value={recipientAddress}
-            onChangeText={setRecipientAddress}
-            placeholder="Recipient address (e.g., 9WzDXw...)"
-            style={styles.textInput}
-            placeholderTextColor="#999"
-          />
-          <TextInput
-            value={solAmount}
-            onChangeText={setSolAmount}
-            placeholder="Amount in SOL"
-            keyboardType="numeric"
-            style={styles.textInput}
-            placeholderTextColor="#999"
-          />
-          <TouchableOpacity 
-            style={[
-              styles.sendButton,
-              (!recipientAddress || !account?.address || loading) && styles.disabledButton
-            ]}
-            onPress={sendSolTransaction}
-            disabled={!recipientAddress || !account?.address || loading}
-          >
-            <Text style={styles.sendButtonText}>
-              {loading ? "🕒 Sending..." : "🚀 Send SOL"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Transaction History */}
-        {transactionHistory.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>📜 Recent Transactions</Text>
-            {transactionHistory.slice(0, 5).map((tx, index) => (
-              <View key={index} style={styles.transactionItem}>
-                <Text style={styles.transactionText} numberOfLines={2}>
-                  {tx}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutButtonText}>🚪 Logout</Text>
-        </TouchableOpacity>
-      </ScrollView>
+      {renderScreen()}
     </View>
   );
 };
@@ -509,6 +685,80 @@ const styles = StyleSheet.create({
     color: '#2d3748',
     marginBottom: 16,
   },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  setupCard: {
+    backgroundColor: '#f7fafc',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  setupTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2d3748',
+    marginBottom: 12,
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  stepNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4299e1',
+    marginRight: 8,
+    minWidth: 20,
+  },
+  stepText: {
+    fontSize: 14,
+    color: '#4a5568',
+    flex: 1,
+  },
+  codeBlock: {
+    backgroundColor: '#2d3748',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    marginLeft: 28,
+  },
+  codeText: {
+    color: '#e2e8f0',
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  fileList: {
+    marginLeft: 28,
+    marginBottom: 12,
+  },
+  fileText: {
+    fontSize: 12,
+    color: '#4a5568',
+    fontFamily: 'monospace',
+    marginBottom: 2,
+  },
+  statusCard: {
+    backgroundColor: '#edf2f7',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2d3748',
+    marginBottom: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    color: '#4a5568',
+    marginBottom: 4,
+  },
   addressContainer: {
     backgroundColor: '#f7fafc',
     padding: 12,
@@ -542,6 +792,24 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  pokerButton: {
+    backgroundColor: '#805ad5',
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pokerButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   networkButtons: {
     flexDirection: 'row',
@@ -611,5 +879,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  backButton: {
+    backgroundColor: '#718096',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
