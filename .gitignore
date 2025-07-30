@@ -44,3 +44,5 @@ expo-env.d.ts
 # @end expo-cli
 
 app.json
+
+.env
