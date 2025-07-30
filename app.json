@@ -33,7 +33,8 @@
     "extra": {
       "privyAppId": "cmdbsqd2b00z9le0mwx5usq52",
       "privyClientId": "client-WY6Nut73J38JvZmtqsWbNPhhCZ59UCKFQ6iawcq7Qp77s",
-      "passkeyAssociatedDomain": ""
+      "passkeyAssociatedDomain": "",
+      "geminiApiKey": "AIzaSyBmPtfSY4uCv3o1KNNMRjgWVgeaXggbXpc"
     },
     "plugins": [
       "expo-router",

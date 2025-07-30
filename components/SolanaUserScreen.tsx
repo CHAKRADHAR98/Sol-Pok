@@ -18,14 +18,8 @@ import {
 import Constants from "expo-constants";
 import { PrivyUser } from "@privy-io/public-api";
 
-// Import poker components - with fallback handling
-let SimplePokerGame: React.ComponentType<any> | null = null;
-try {
-  const pokerModule = require("./poker/SimplePokerGame");
-  SimplePokerGame = pokerModule.SimplePokerGame;
-} catch (error) {
-  console.log("Poker game not available yet:", error);
-}
+// Import the new Gemini poker game component
+import GeminiPokerGame from "./poker/GeminiPokerGame";
 
 // Helper function to get main identifier from linked accounts
 const toMainIdentifier = (x: PrivyUser["linked_accounts"][number]) => {
@@ -331,20 +325,21 @@ export const SolanaUserScreen = () => {
     <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>🎰 Poker Lobby</Text>
-        <Text style={styles.subtitle}>Choose your game mode</Text>
+        <Text style={styles.subtitle}>Choose your poker experience</Text>
         
         <TouchableOpacity 
-          style={styles.primaryButton} 
+          style={styles.geminiPokerButton} 
           onPress={navigateToPokerGame}
         >
-          <Text style={styles.primaryButtonText}>🤖 Play vs Bots</Text>
+          <Text style={styles.geminiPokerButtonText}>🤖 Play Gemini Hold'em</Text>
+          <Text style={styles.geminiPokerSubtext}>Advanced AI opponent with strategic play</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.secondaryButton, { backgroundColor: '#a0aec0' }]} 
           disabled={true}
         >
-          <Text style={styles.secondaryButtonText}>👥 Multiplayer (Coming Soon)</Text>
+          <Text style={styles.secondaryButtonText}>🌐 Online Multiplayer (Coming Soon)</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -357,78 +352,13 @@ export const SolanaUserScreen = () => {
     </ScrollView>
   );
 
-  // Poker Game Screen
+  // Poker Game Screen - Now using the new Gemini poker game
   const renderPokerGame = () => {
-    // If SimplePokerGame is available, use it
-    if (SimplePokerGame) {
-      return (
-        <SimplePokerGame 
-          playerId={user?.id || 'user1'} 
-          onBackToLobby={() => setCurrentScreen('poker_lobby')}
-        />
-      );
-    }
-    
-    // Fallback: Show setup instructions
     return (
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🔧 Poker Setup Required</Text>
-          <Text style={styles.subtitle}>Please complete the setup steps:</Text>
-          
-          <View style={styles.setupCard}>
-            <Text style={styles.setupTitle}>📋 Required Steps:</Text>
-            
-            <View style={styles.stepItem}>
-              <Text style={styles.stepNumber}>1.</Text>
-              <Text style={styles.stepText}>Install dependencies:</Text>
-            </View>
-            <View style={styles.codeBlock}>
-              <Text style={styles.codeText}>npm install @creativenull/deckjs lodash</Text>
-            </View>
-            
-            <View style={styles.stepItem}>
-              <Text style={styles.stepNumber}>2.</Text>
-              <Text style={styles.stepText}>Create these files:</Text>
-            </View>
-            <View style={styles.fileList}>
-              <Text style={styles.fileText}>• lib/poker/Poker.ts</Text>
-              <Text style={styles.fileText}>• lib/poker/TexasHoldem.ts</Text>
-              <Text style={styles.fileText}>• lib/poker/GameManager.ts</Text>
-              <Text style={styles.fileText}>• components/shared/Card.tsx</Text>
-              <Text style={styles.fileText}>• components/poker/SimplePokerGame.tsx</Text>
-            </View>
-            
-            <View style={styles.stepItem}>
-              <Text style={styles.stepNumber}>3.</Text>
-              <Text style={styles.stepText}>Restart Expo server:</Text>
-            </View>
-            <View style={styles.codeBlock}>
-              <Text style={styles.codeText}>npm start</Text>
-            </View>
-          </View>
-          
-          <View style={styles.statusCard}>
-            <Text style={styles.statusTitle}>📊 Current Status:</Text>
-            <Text style={styles.statusText}>
-              ❌ Poker game files not found
-            </Text>
-            <Text style={styles.statusText}>
-              ℹ️ User ID: {user?.id}
-            </Text>
-            <Text style={styles.statusText}>
-              ℹ️ Network: {currentNetwork.toUpperCase()}
-            </Text>
-          </View>
-          
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => setCurrentScreen('poker_lobby')}
-          >
-            <Text style={styles.backButtonText}>⬅️ Back to Lobby</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+      <GeminiPokerGame 
+        playerId={user?.id || 'user1'} 
+        onBackToLobby={() => setCurrentScreen('poker_lobby')}
+      />
     );
   };
 
@@ -458,6 +388,7 @@ export const SolanaUserScreen = () => {
           disabled={!account?.address}
         >
           <Text style={styles.pokerButtonText}>🎰 Play Poker</Text>
+          <Text style={styles.pokerButtonSubtext}>Advanced AI • Professional Interface</Text>
         </TouchableOpacity>
         
         {!account?.address && (
@@ -590,7 +521,7 @@ export const SolanaUserScreen = () => {
         <Text style={styles.headerTitle}>
           {currentScreen === 'wallet' ? '💰 Solana Wallet' : 
            currentScreen === 'poker_lobby' ? '🎰 Poker Lobby' : 
-           '🃏 Poker Game'}
+           '🃏 Gemini Hold\'em'}
         </Text>
         <View style={styles.networkBadge}>
           <Text style={styles.networkText}>🌐 {currentNetwork.toUpperCase()}</Text>
@@ -691,74 +622,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  setupCard: {
-    backgroundColor: '#f7fafc',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  setupTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2d3748',
-    marginBottom: 12,
-  },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  stepNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4299e1',
-    marginRight: 8,
-    minWidth: 20,
-  },
-  stepText: {
-    fontSize: 14,
-    color: '#4a5568',
-    flex: 1,
-  },
-  codeBlock: {
-    backgroundColor: '#2d3748',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-    marginLeft: 28,
-  },
-  codeText: {
-    color: '#e2e8f0',
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
-  fileList: {
-    marginLeft: 28,
-    marginBottom: 12,
-  },
-  fileText: {
-    fontSize: 12,
-    color: '#4a5568',
-    fontFamily: 'monospace',
-    marginBottom: 2,
-  },
-  statusCard: {
-    backgroundColor: '#edf2f7',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2d3748',
-    marginBottom: 8,
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#4a5568',
-    marginBottom: 4,
-  },
   addressContainer: {
     backgroundColor: '#f7fafc',
     padding: 12,
@@ -804,6 +667,35 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  pokerButtonSubtext: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  geminiPokerButton: {
+    backgroundColor: '#059669',
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  geminiPokerButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  geminiPokerSubtext: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 12,
+    textAlign: 'center',
   },
   helperText: {
     fontSize: 12,
