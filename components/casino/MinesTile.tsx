@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Tile as TileType, GameState } from './types';
 
 interface MinesTileProps {
@@ -21,38 +21,38 @@ const MinesTile: React.FC<MinesTileProps> = ({ tile, gameState, onPress }) => {
   const isDisabled = isRevealed || gameState === GameState.LOST || gameState === GameState.WON;
   const isGameActive = gameState === GameState.PLAYING;
 
-  let tileStyle = [styles.tile];
   let content: React.ReactNode = null;
+  let tileStyles: ViewStyle[] = [styles.tile];
 
   if (isRevealed) {
     if (isMine) {
-      tileStyle.push(styles.mineTile);
+      tileStyles.push(styles.mineTile);
       content = <MineIcon size={20} />;
     } else {
-      tileStyle.push(styles.gemTile);
+      tileStyles.push(styles.gemTile);
       content = <GemIcon size={20} />;
     }
   } else if (gameState === GameState.LOST || gameState === GameState.WON) {
     if (isMine) {
-      tileStyle.push(styles.revealedMineTile);
+      tileStyles.push(styles.revealedMineTile);
       content = <MineIcon size={16} />;
     } else {
-      tileStyle.push(styles.hiddenTile);
+      tileStyles.push(styles.hiddenTile);
     }
   } else {
     // Default hidden state - make sure it's visible
-    tileStyle.push(styles.hiddenTile);
+    tileStyles.push(styles.hiddenTile);
   }
 
   if (isDisabled) {
-    tileStyle.push(styles.disabledTile);
+    tileStyles.push(styles.disabledTile);
   }
 
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={isDisabled || !isGameActive}
-      style={tileStyle}
+      style={tileStyles}
       activeOpacity={0.7}
     >
       {content}
@@ -100,7 +100,6 @@ const styles = StyleSheet.create({
   },
   icon: {
     textAlign: 'center',
-    textAlignVertical: 'center',
   },
 });
 
