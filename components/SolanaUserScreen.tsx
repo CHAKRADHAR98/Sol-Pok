@@ -18,8 +18,11 @@ import {
 import Constants from "expo-constants";
 import { PrivyUser } from "@privy-io/public-api";
 
-// Import the new Gemini poker game component
+// Import game components
 import GeminiPokerGame from "./poker/GeminiPokerGame";
+import CasinoLobby from "./casino/CasinoLobby";
+import BlackjackGame from "./casino/BlackjackGame";
+import MinesGame from "./casino/MinesGame";
 
 // Helper function to get main identifier from linked accounts
 const toMainIdentifier = (x: PrivyUser["linked_accounts"][number]) => {
@@ -46,11 +49,14 @@ const SOLANA_NETWORKS = {
 };
 
 // Navigation types
-type ScreenType = 'wallet' | 'poker_lobby' | 'poker_game';
+type ScreenType = 'wallet' | 'poker_lobby' | 'poker_game' | 'casino_lobby' | 'blackjack_game' | 'mines_game';
 
 export const SolanaUserScreen = () => {
   // Navigation state
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('wallet');
+  
+  // Casino coins state (separate from SOL)
+  const [casinoCoins, setCasinoCoins] = useState(1000); // Starting with 1000 casino coins
   
   // Existing wallet state
   const [currentNetwork, setCurrentNetwork] = useState<keyof typeof SOLANA_NETWORKS>("devnet");
@@ -68,6 +74,11 @@ export const SolanaUserScreen = () => {
   
   // Get the user's Solana wallet
   const account = getUserEmbeddedSolanaWallet(user);
+
+  // Casino coin management
+  const handleCoinChange = useCallback((amount: number) => {
+    setCasinoCoins(prev => Math.max(0, prev + amount));
+  }, []);
 
   // Copy wallet address to clipboard
   const copyWalletAddress = useCallback(async () => {
@@ -296,12 +307,24 @@ export const SolanaUserScreen = () => {
     setCurrentScreen('poker_lobby');
   };
 
+  const navigateToCasinoLobby = () => {
+    setCurrentScreen('casino_lobby');
+  };
+
   const navigateToWallet = () => {
     setCurrentScreen('wallet');
   };
 
   const navigateToPokerGame = () => {
     setCurrentScreen('poker_game');
+  };
+
+  const navigateToBlackjackGame = () => {
+    setCurrentScreen('blackjack_game');
+  };
+
+  const navigateToMinesGame = () => {
+    setCurrentScreen('mines_game');
   };
 
   if (!user) {
@@ -315,6 +338,32 @@ export const SolanaUserScreen = () => {
         return renderPokerLobby();
       case 'poker_game':
         return renderPokerGame();
+      case 'casino_lobby':
+        return (
+          <CasinoLobby 
+            onGoBack={navigateToWallet}
+            onSelectGame={(game) => {
+              if (game === 'blackjack') navigateToBlackjackGame();
+              if (game === 'mines') navigateToMinesGame();
+            }}
+          />
+        );
+      case 'blackjack_game':
+        return (
+          <BlackjackGame 
+            onGoBack={navigateToCasinoLobby}
+            coins={casinoCoins}
+            onCoinChange={handleCoinChange}
+          />
+        );
+      case 'mines_game':
+        return (
+          <MinesGame 
+            onGoBack={navigateToCasinoLobby}
+            coins={casinoCoins}
+            onCoinChange={handleCoinChange}
+          />
+        );
       default:
         return renderWalletScreen();
     }
@@ -378,6 +427,15 @@ export const SolanaUserScreen = () => {
         )}
       </View>
 
+      {/* Casino Coins Card */}
+      <View style={styles.balanceCard}>
+        <Text style={styles.balanceLabel}>Casino Coins</Text>
+        <Text style={styles.balanceAmount}>
+          {casinoCoins.toLocaleString()} Coins
+        </Text>
+        <Text style={styles.helperText}>For casino games only</Text>
+      </View>
+
       {/* Quick Actions Card */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>⚡ Quick Actions</Text>
@@ -389,6 +447,14 @@ export const SolanaUserScreen = () => {
         >
           <Text style={styles.pokerButtonText}>🎰 Play Poker</Text>
           <Text style={styles.pokerButtonSubtext}>Advanced AI • Professional Interface</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.casinoButton} 
+          onPress={navigateToCasinoLobby}
+        >
+          <Text style={styles.casinoButtonText}>🎲 Casino Games</Text>
+          <Text style={styles.casinoButtonSubtext}>Blackjack • Mines • More Coming Soon</Text>
         </TouchableOpacity>
         
         {!account?.address && (
@@ -521,7 +587,10 @@ export const SolanaUserScreen = () => {
         <Text style={styles.headerTitle}>
           {currentScreen === 'wallet' ? '💰 Solana Wallet' : 
            currentScreen === 'poker_lobby' ? '🎰 Poker Lobby' : 
-           '🃏 Gemini Hold\'em'}
+           currentScreen === 'poker_game' ? '🃏 Gemini Hold\'em' :
+           currentScreen === 'casino_lobby' ? '🎲 Casino Lobby' :
+           currentScreen === 'blackjack_game' ? '🃏 Blackjack' :
+           currentScreen === 'mines_game' ? '💎 Mines' : '💰 Solana Wallet'}
         </Text>
         <View style={styles.networkBadge}>
           <Text style={styles.networkText}>🌐 {currentNetwork.toUpperCase()}</Text>
@@ -671,6 +740,29 @@ const styles = StyleSheet.create({
   },
   pokerButtonSubtext: {
     color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  casinoButton: {
+    backgroundColor: '#f56565',
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  casinoButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  casinoButtonSubtext: {
+    color: 'rgba(255,255,255,0.9)',
     fontSize: 12,
     textAlign: 'center',
   },
