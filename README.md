@@ -1,63 +1,26 @@
-# Privy Expo Starter
+Betzy
+Welcome to Betzy! This is a mobile app we built to bring classic casino games to your phone, with a fun crypto twist. It's a complete project that shows how you can mix regular mobile app features with the world of Solana.
 
-This demonstrates a minimal working installation of the privy sdk in a fresh expo app. We recommend reading the [documentation](https://docs.privy.io/guide/expo/dashboard) for a more detailed guide.
+Think of it as both a fun game to play and a great starting point for anyone who wants to build their own mobile crypto app.
 
-## Setup
+What's Inside?
+At its heart, Betzy is a collection of games with a built-in crypto wallet. Here’s what you'll find:
 
-1. Install dependencies
+A Full Suite of Games: You can play Texas Hold'em Poker against a computer that thinks like a real player, classic Blackjack, and a strategy game called Mines.
 
-   ```sh
-   yarn
-   ```
+Your Own Solana Wallet: When you sign up, the app gives you your own secure wallet on the Solana network. You can use it to send and receive SOL.
 
-2. Configure an app client in your [Dashboard](https://dashboard.privy.io/apps?page=settings&setting=clients), and add your Privy app ID and app client ID in `app.json`
+Ready for Multiplayer: We've also built a secure system on Solana to handle game buy-ins and payouts. This is the foundation for future multiplayer games where you can play against others using real crypto.
 
-   ```json
-   ...
-    "extra": {
-      "privyAppId": "<your-app-id>",
-      "privyClientId": "<your-client-id>"
-    }
-   ...
-   ```
+What It's Built With
+We used a handful of modern tools to create Betzy:
 
-   If you are using Expo go, be sure to add `host.exp.Exponent` to Allowed app identifiers under app clients in your [Dashboard]('https://dashboard.privy.io/apps?page=settings&setting=clients')
+React Native & Expo for the mobile app itself.
 
-3. Configure your application identifier in `app.json`. This should match the bundle identifier for your app in the app store.
+Privy to handle user sign-ups and create the wallets.
 
-   ```json
-   ...
-    "ios": {
-      "bundleIdentifier": "com.example.myapp"
-    },
-    "android": {
-      "package": "com.example.myapp"
-    }
-   ...
-   ```
+Solana for all the crypto-related features.
 
-4. If you are making use of passkeys, ensure that you have an [associated website](https://docs.privy.io/guide/expo/setup/passkey#_3-update-native-app-settings) for your application. Once you have this your `app.json` should be updated as follows:
+Rust & Anchor for the on-chain multiplayer program.
 
-   ```json
-   ...
-   "associatedDomains": ["webcredentials:<your-associated-domain>"],
-   ...
-   "extra": {
-      ...
-      "passkeyAssociatedDomain": "https://<your-associated-domain>"
-    },
-   ...
-   ```
-
-## Run the app
-
-```sh
-# expo go
-yarn run start
-
-# ios
-yarn run ios
-
-# android
-yarn run android
-```
+Google Gemini to power the smart poker AI.
