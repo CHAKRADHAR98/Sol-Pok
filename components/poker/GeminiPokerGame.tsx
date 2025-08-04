@@ -46,7 +46,7 @@ const GameLobby: React.FC<{ onGameStart: (settings: any) => void }> = ({ onGameS
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.lobbyContainer}>
             <View style={styles.lobbyCard}>
-                <Text style={styles.lobbyTitle}>🎰 Gemini Hold'em</Text>
+                <Text style={styles.lobbyTitle}>🎰 Texas Hold'em</Text>
                 <Text style={styles.lobbySubtitle}>Choose your poker experience</Text>
                 
                 <View style={styles.modeSection}>
@@ -187,7 +187,7 @@ const GeminiPokerGame: React.FC<GeminiPokerGameProps> = ({ playerId, onBackToLob
                     <TouchableOpacity style={styles.backButton} onPress={onBackToLobby}>
                         <Text style={styles.backButtonText}>← Back</Text>
                     </TouchableOpacity>
-                    <Text style={styles.gameTitle}>Gemini Hold'em</Text>
+                    <Text style={styles.gameTitle}>Texas Hold'em</Text>
                     <View style={styles.placeholder} />
                 </View>
 
