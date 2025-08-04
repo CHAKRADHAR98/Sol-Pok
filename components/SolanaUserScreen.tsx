@@ -49,7 +49,7 @@ const SOLANA_NETWORKS = {
 };
 
 // Navigation types
-type ScreenType = 'wallet' | 'poker_lobby' | 'poker_game' | 'casino_lobby' | 'blackjack_game' | 'mines_game';
+type ScreenType = 'wallet' | 'poker_game' | 'casino_lobby' | 'blackjack_game' | 'mines_game';
 
 export const SolanaUserScreen = () => {
   // Navigation state
@@ -156,7 +156,7 @@ export const SolanaUserScreen = () => {
       
       if (result.signature) {
         const newSignedMessage = `${message} | ${result.signature.slice(0, 20)}...`;
-        setSignedMessages((prev) => [newSignedMessage, ...prev]);
+        setSignedMessages((prev: string[]) => [newSignedMessage, ...prev]);
         Alert.alert("✅ Success!", "Message signed successfully!");
       }
     } catch (error) {
@@ -224,7 +224,7 @@ export const SolanaUserScreen = () => {
       
       if (result && result.signature) {
         const newTransaction = `Sent ${solAmount} SOL to ${recipientAddress.slice(0, 8)}... | ${result.signature.slice(0, 20)}...`;
-        setTransactionHistory((prev) => [newTransaction, ...prev]);
+        setTransactionHistory((prev: string[]) => [newTransaction, ...prev]);
         
         setRecipientAddress("");
         setSolAmount("0.001");
@@ -299,14 +299,6 @@ export const SolanaUserScreen = () => {
   }, [account?.address, currentNetwork, getBalance]);
 
   // Navigation functions
-  const navigateToPokerLobby = () => {
-    if (!account?.address) {
-      Alert.alert("❌ Error", "Please create a wallet first to play poker");
-      return;
-    }
-    setCurrentScreen('poker_lobby');
-  };
-
   const navigateToCasinoLobby = () => {
     setCurrentScreen('casino_lobby');
   };
@@ -316,6 +308,10 @@ export const SolanaUserScreen = () => {
   };
 
   const navigateToPokerGame = () => {
+    if (!account?.address) {
+      Alert.alert("❌ Error", "Please create a wallet first to play poker.");
+      return;
+    }
     setCurrentScreen('poker_game');
   };
 
@@ -334,10 +330,13 @@ export const SolanaUserScreen = () => {
   // Render different screens based on currentScreen
   const renderScreen = () => {
     switch (currentScreen) {
-      case 'poker_lobby':
-        return renderPokerLobby();
       case 'poker_game':
-        return renderPokerGame();
+        return (
+          <GeminiPokerGame 
+            playerId={user?.id || 'user1'} 
+            onBackToLobby={navigateToCasinoLobby}
+          />
+        );
       case 'casino_lobby':
         return (
           <CasinoLobby 
@@ -345,6 +344,7 @@ export const SolanaUserScreen = () => {
             onSelectGame={(game) => {
               if (game === 'blackjack') navigateToBlackjackGame();
               if (game === 'mines') navigateToMinesGame();
+              if (game === 'poker') navigateToPokerGame();
             }}
           />
         );
@@ -367,48 +367,6 @@ export const SolanaUserScreen = () => {
       default:
         return renderWalletScreen();
     }
-  };
-
-  // Poker Lobby Screen
-  const renderPokerLobby = () => (
-    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>🎰 Poker Lobby</Text>
-        <Text style={styles.subtitle}>Choose your poker experience</Text>
-        
-        <TouchableOpacity 
-          style={styles.geminiPokerButton} 
-          onPress={navigateToPokerGame}
-        >
-          <Text style={styles.geminiPokerButtonText}>🤖 Play Gemini Hold'em</Text>
-          <Text style={styles.geminiPokerSubtext}>Advanced AI opponent with strategic play</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.secondaryButton, { backgroundColor: '#a0aec0' }]} 
-          disabled={true}
-        >
-          <Text style={styles.secondaryButtonText}>🌐 Online Multiplayer (Coming Soon)</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={navigateToWallet}
-        >
-          <Text style={styles.backButtonText}>⬅️ Back to Wallet</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  );
-
-  // Poker Game Screen - Now using the new Gemini poker game
-  const renderPokerGame = () => {
-    return (
-      <GeminiPokerGame 
-        playerId={user?.id || 'user1'} 
-        onBackToLobby={() => setCurrentScreen('poker_lobby')}
-      />
-    );
   };
 
   // Original Wallet Screen
@@ -438,27 +396,18 @@ export const SolanaUserScreen = () => {
 
       {/* Quick Actions Card */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>⚡ Quick Actions</Text>
+        <Text style={styles.cardTitle}>⚡ Game Lobby</Text>
         
-        <TouchableOpacity 
-          style={[styles.pokerButton, !account?.address && styles.disabledButton]} 
-          onPress={navigateToPokerLobby}
-          disabled={!account?.address}
-        >
-          <Text style={styles.pokerButtonText}>🎰 Play Poker</Text>
-          <Text style={styles.pokerButtonSubtext}>Advanced AI • Professional Interface</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity 
           style={styles.casinoButton} 
           onPress={navigateToCasinoLobby}
         >
-          <Text style={styles.casinoButtonText}>🎲 Casino Games</Text>
-          <Text style={styles.casinoButtonSubtext}>Blackjack • Mines • More Coming Soon</Text>
+          <Text style={styles.casinoButtonText}>🎲 Play Games</Text>
+          <Text style={styles.casinoButtonSubtext}>Poker • Blackjack • Mines</Text>
         </TouchableOpacity>
         
         {!account?.address && (
-          <Text style={styles.helperText}>Create a wallet to start playing poker!</Text>
+          <Text style={styles.helperText}>Create a wallet to enable all features!</Text>
         )}
       </View>
 
@@ -586,10 +535,9 @@ export const SolanaUserScreen = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
           {currentScreen === 'wallet' ? '💰 Solana Wallet' : 
-           currentScreen === 'poker_lobby' ? '🎰 Poker Lobby' : 
-           currentScreen === 'poker_game' ? '🃏 Gemini Hold\'em' :
            currentScreen === 'casino_lobby' ? '🎲 Casino Lobby' :
-           currentScreen === 'blackjack_game' ? '🃏 Blackjack' :
+           currentScreen === 'poker_game' ? '🃏 Gemini Hold\'em' :
+           currentScreen === 'blackjack_game' ? '♠️ Blackjack' :
            currentScreen === 'mines_game' ? '💎 Mines' : '💰 Solana Wallet'}
         </Text>
         <View style={styles.networkBadge}>

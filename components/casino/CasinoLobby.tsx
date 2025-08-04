@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 
 interface CasinoLobbyProps {
   onGoBack: () => void;
-  onSelectGame: (game: 'blackjack' | 'mines' | 'roulette') => void;
+  onSelectGame: (game: 'blackjack' | 'mines' | 'roulette' | 'poker') => void;
 }
 
 const GameCard = ({ 
@@ -59,8 +59,15 @@ const CasinoLobby: React.FC<CasinoLobbyProps> = ({ onGoBack, onSelectGame }) => 
 
           <View style={styles.gamesGrid}>
             <GameCard
-              title="Blackjack"
+              title="Texas Hold'em"
               emoji="🃏"
+              description="Play against a strategic AI in this classic poker game."
+              onPress={() => onSelectGame('poker')}
+            />
+
+            <GameCard
+              title="Blackjack"
+              emoji="♠️"
               description="Classic 21 card game with perfect strategy"
               onPress={() => onSelectGame('blackjack')}
             />
