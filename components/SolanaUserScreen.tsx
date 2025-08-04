@@ -1,6 +1,6 @@
 // components/SolanaUserScreen.tsx
 import React, { useState, useCallback, useEffect } from "react";
-import { Text, TextInput, View, TouchableOpacity, ScrollView, Alert, StyleSheet, ActivityIndicator } from "react-native";
+import { Text, TextInput, View, TouchableOpacity, ScrollView, Alert, StyleSheet, ActivityIndicator, Linking } from "react-native";
 import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
 import * as Clipboard from 'expo-clipboard';
 import { usePrivy, useEmbeddedSolanaWallet, getUserEmbeddedSolanaWallet } from "@privy-io/expo";
@@ -62,7 +62,6 @@ export const SolanaUserScreen = () => {
   const createWallet = useCallback(async () => {
       setLoading(true);
       try {
-          // FIX: Check if the `create` function exists before calling it.
           if (create) {
               await create();
               getBalance();
@@ -75,9 +74,52 @@ export const SolanaUserScreen = () => {
       } finally {
           setLoading(false);
       }
-  }, [create, getBalance])
+  }, [create, getBalance]);
 
-  const requestAirdrop = useCallback(async () => { /* ... Functionality unchanged ... */ }, [account, currentNetwork, getBalance]);
+  // FIX: Updated airdrop function with a more robust confirmation strategy.
+  const requestAirdrop = useCallback(async () => {
+    if (!account?.address) {
+        Alert.alert("No Wallet", "Create a wallet before requesting an airdrop.");
+        return;
+    }
+    if (currentNetwork === "mainnet") {
+      Alert.alert("Mainnet Selected", "Airdrops are only available on the devnet.");
+      return;
+    }
+  
+    setLoading(true);
+    try {
+      const connection = new Connection(SOLANA_NETWORKS[currentNetwork], "confirmed");
+      const publicKey = new PublicKey(account.address);
+      
+      // FIX: Get the latest blockhash for robust transaction confirmation.
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      const signature = await connection.requestAirdrop(publicKey, 1 * LAMPORTS_PER_SOL);
+  
+      // FIX: Use the new blockhash information to confirm the transaction.
+      await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight,
+      }, "confirmed");
+
+      Alert.alert(
+        "Airdrop Successful!", 
+        "1 SOL has been added to your account. It may take a moment to reflect.",
+        [
+            {text: 'OK', onPress: () => getBalance()},
+            {text: 'View on Explorer', onPress: () => Linking.openURL(`https://explorer.solana.com/tx/${signature}?cluster=devnet`)}
+        ]
+      );
+  
+    } catch (error) {
+      console.error("Airdrop Error:", error);
+      Alert.alert("Airdrop Failed", "Could not complete the airdrop. The devnet may be busy. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  }, [account?.address, currentNetwork, getBalance]);
+
   const sendSolTransaction = useCallback(async () => { /* ... Functionality unchanged ... */ }, [account, currentNetwork, getBalance, recipientAddress, solAmount]);
   
   useEffect(() => {
@@ -130,8 +172,8 @@ export const SolanaUserScreen = () => {
                     <Text style={styles.primaryButtonText}>Copy Address</Text>
                 </TouchableOpacity>
                 {currentNetwork !== "mainnet" && (
-                    <TouchableOpacity style={[styles.flexButton, styles.secondaryButton]} onPress={requestAirdrop}>
-                        <Text style={styles.secondaryButtonText}>Get Test SOL</Text>
+                    <TouchableOpacity style={[styles.flexButton, styles.secondaryButton]} onPress={requestAirdrop} disabled={loading}>
+                        <Text style={styles.secondaryButtonText}>{loading ? 'Requesting...' : 'Get Test SOL'}</Text>
                     </TouchableOpacity>
                 )}
             </View>
