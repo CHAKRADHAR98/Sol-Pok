@@ -31,6 +31,8 @@ We used a modern tech stack to bring Betzy to life:
 - **Rust & Anchor** — for the on-chain multiplayer game logic  
 - **Google Gemini** — to power the smart Poker AI
 
+
+
 ---
 
 
